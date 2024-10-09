@@ -1,14 +1,14 @@
 "use client"
 
-import React, {useState, useMemo, useRef, useEffect} from "react";
+import React, {useState, useMemo} from "react";
 import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import Image from "next/image";
 import ListBox, {infoProps} from "@/app/components/ListBox";
 import {io} from "socket.io-client";
 import jsonparser from "@/app/lib/jsonparser";
-import WaveSurfer from "wavesurfer.js";
 import AudioPlayer from "@/app/components/AudioPlayer";
+import ImageBoxBase64 from "@/app/components/ImageBox";
 
 const navigation = [
     { name: 'Dashboard', href: '#', current: true },
@@ -22,10 +22,7 @@ function classNames(...classes: string[]) {
 }
 
 export default function Page() {
-    // const [socketData, setSocketData] = useState<string|null>(null);
-    // const [totInPerson, setTotInPerson] = useState<number>(0);
-    // const [totOutPerson, setTotOutPerson] = useState<number>(0);
-    const [info, setInfo] = useState<infoProps>({data: "-", totInPerson: 0, totOutPerson: 0});
+    const [info, setInfo] = useState<infoProps>({data: "-", totInPerson: 0, totOutPerson: 0, rawImage: ""});
 
     const WebSocket = useMemo(() => io("ws://localhost:8900"), []);
     WebSocket.on("connect", () => {
@@ -34,14 +31,11 @@ export default function Page() {
 
     WebSocket.on("message", (message: any) => {
         const result = jsonparser.getInfoCounting(message);
-
-        // setTotInPerson((totInPerson + result.totInPerson) <= totOutPerson ? totOutPerson: totInPerson + result.totInPerson);
-        // setTotOutPerson((totOutPerson + result.totOutPerson <= totInPerson) ?  totInPerson : totOutPerson + result.totOutPerson);
-
         setInfo({
             data: (result?.data || ""),
             totInPerson: info?.totInPerson + result?.totInPerson,
             totOutPerson: info?.totOutPerson + result?.totOutPerson,
+            rawImage: result?.rawImage ?? ""
         });
     })
 
@@ -49,38 +43,9 @@ export default function Page() {
         console.log("disconnected!")
     })
 
-    // const waveformRef = useRef(null);
-    // let wavesurfer: WaveSurfer;
-    // useEffect(() => {
-    //     wavesurfer = WaveSurfer.create({
-    //         container: waveformRef.current,
-    //         waveColor: "#34374B",
-    //         progressColor: "#F90",
-    //         url: "/oceans.mp3",
-    //         dragToSeek: true,
-    //         width: "35vw",
-    //         hideScrollbar: true,
-    //         normalize: true,
-    //         barGap: 1,
-    //         height: 60,
-    //         barHeight: 20,
-    //         barRadius: 20,
-    //         barWidth: 5,
-    //     });
-    //     wavesurfer.on("finish", () => {
-    //         console.log("song finished");
-    //     });
-    //
-    //     wavesurfer.on("ready", () => {
-    //         console.log("Waveform is ready");
-    //     });
-    //     return () => {
-    //         wavesurfer.destroy();
-    //     };
-    // }, []);
-
 
     return (
+        <div>
         <Disclosure as="nav" className="bg-gray-800">
             <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
                 <div className="relative flex h-16 items-center justify-between">
@@ -196,10 +161,12 @@ export default function Page() {
                 </div>
             </DisclosurePanel>
 
-            <ListBox data={info.data} totInPerson={info.totInPerson} totOutPerson={info.totOutPerson}/>
-            <AudioPlayer inPerson={info.totInPerson} outPerson={info.totOutPerson} />
-
 
         </Disclosure>
+            <ListBox data={info.data} totInPerson={info.totInPerson} totOutPerson={info.totOutPerson} rawImage={info.rawImage} />
+            {/*<ImageBoxBase64 raw={info.rawImage} />*/}
+            <div className="pb-"></div>
+            <AudioPlayer inPerson={info.totInPerson} outPerson={info.totOutPerson} />
+        </div>
     )
 }

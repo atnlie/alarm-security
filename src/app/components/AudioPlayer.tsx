@@ -75,8 +75,6 @@ export default function AudioPlayer({inPerson, outPerson}: playerProps){
         alert("Alert sound is activated.");
     };
 
-
-
     return (
         <div className="bg-white">
             <div className="ml-64">
