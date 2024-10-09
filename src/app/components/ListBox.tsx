@@ -91,20 +91,6 @@ export default function ListBox({data, totInPerson, totOutPerson}: infoProps) {
                                             className="text-xl font-bold text-purple-800 ml-6">{totOutPerson}</span></p>
                                         <hr/>
                                     </div>
-                                    <div className="wavesurfer-controls">
-                                        {/*<button onClick={handleSkipBack}>*/}
-                                        {/*    <BsSkipBackward/>*/}
-                                        {/*</button>*/}
-                                        {/*<button onClick={}>*/}
-                                            <BsFillStopFill height={500} width={500}/>
-                                        {/*</button>*/}
-                                        {/*<button onClick={}>*/}
-                                        {/*    <BsFillStopFill/>*/}
-                                        {/*</button>*/}
-                                        {/*<button onClick={handleSkipForward}>*/}
-                                        {/*    <BsSkipForward/>*/}
-                                        {/*</button>*/}
-                                    </div>
                                 </div>
                                 :
                                 <div></div>
