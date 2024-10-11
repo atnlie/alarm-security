@@ -5,23 +5,34 @@ import useSound from 'use-sound';
 export interface playerProps {
     inPerson: number;
     outPerson: number;
+    isFR: boolean;
+    FRStatus: string;
+    idReport: string;
 }
 
-export default function AudioPlayer({inPerson, outPerson}: playerProps){
-    const [playWav] = useSound('/sounds/notification.wav', {
-        volume: 0.50,
+export default function AudioPlayer({inPerson, outPerson, isFR, FRStatus, idReport}: playerProps){
+    const [playWav, {stop}] = useSound('/sounds/notification.wav', {
+        volume: 0.85,
+        interrupt: true
+    });
+    const [playAlarm] = useSound('/sounds/alert-alarm-1.wav', {
+        volume: 0.85,
+        interrupt: true
     });
 
     const [canCallFunction, setCanCallFunction] = useState(true);
     const [activeAlarmFunction, setActiveAlarmFunction] = useState(true);
 
     const handleDeactiveSound = () => {
-        if (!activeAlarmFunction) {
-            console.log('Function cannot be called yet. Please wait.');
-            return;
-        }
+        // if (!activeAlarmFunction) {
+        //     console.log('Function cannot be called yet. Please wait.');
+        //     return;
+        // }
 
-        setCanCallFunction(false);
+        stop();
+        console.log('Hold notification for 2 minutes');
+        setActiveAlarmFunction(false);
+        alert("Alarm ditunda selama 2 menit.");
 
         setTimeout(() => {
             setActiveAlarmFunction(true);  // Re-enable the function after the timeout
@@ -37,20 +48,48 @@ export default function AudioPlayer({inPerson, outPerson}: playerProps){
         // Call the function
         console.log('Function called at:', new Date().toLocaleTimeString());
 
-        playWav();
+        console.log("INFO CHECK isFR " + isFR + " FrSTATUS " + FRStatus + " activeAlarmFunction " + activeAlarmFunction + " idReport " + idReport + " inPerson " + inPerson + "\n\n");
+        if (isFR && FRStatus == "UNKNOWN" && activeAlarmFunction && idReport == "NFV4-FR") {
+            console.log('Kepanggil');
+            inPerson=0;
+            outPerson=0;
+            isFR= false;
+            FRStatus="";
+            idReport="";
+            playAlarm();
+        } else if (activeAlarmFunction  && idReport == "NFV4-MPA" && inPerson > 0) {
+            // playWav();
+            console.log('Detect People counting');
+        }
 
         // Disable further calls
         setCanCallFunction(false);
 
         // Set timeout to re-enable the function call after 1 minute (60 seconds)
         setTimeout(() => {
+            inPerson=0;
+            outPerson=0;
+            isFR= false;
+            FRStatus="";
+            idReport="";
             setCanCallFunction(true);  // Re-enable the function after the timeout
-        }, 10000);  // 60000 ms = 1 minute
+        }, 20000);  // 60000 ms = 1 minute
     };
 
-    if (inPerson > 0 || outPerson > 0) {
+    // if (inPerson > 0 || outPerson > 0) {
+    //     if (activeAlarmFunction) {
+    //         invokeFunction();
+    //     }
+    //
+    // }
+
+    if (FRStatus == 'UNKNOWN' && idReport == "NFV4-FR") {
         if (activeAlarmFunction) {
             invokeFunction();
+        }
+    } else if (inPerson > 0 && idReport == "NFV4-MPA") {
+        if (activeAlarmFunction) {
+            // invokeFunction();
         }
     }
 
@@ -72,7 +111,7 @@ export default function AudioPlayer({inPerson, outPerson}: playerProps){
                 console.log('AudioContext resumed after user interaction');
             });
         }
-        alert("Alert sound is activated.");
+        alert("Suara Alert diaktifkan.");
     };
 
     return (
@@ -88,7 +127,7 @@ export default function AudioPlayer({inPerson, outPerson}: playerProps){
                     :
                     <div>
                         <button onClick={handleDeactiveSound} className="px-10 py-2 bg-red-800 font-bold text-white">
-                            Non-aktifkan Alarm 2 menit.
+                            Non-aktifkan Alarm 2 menit - Status: {(!activeAlarmFunction) ? "Aktif" : "Tidak aktif"}
                         </button>
                     </div>
                 }

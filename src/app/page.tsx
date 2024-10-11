@@ -4,11 +4,11 @@ import React, {useState, useMemo} from "react";
 import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import Image from "next/image";
-import ListBox, {infoProps} from "@/app/components/ListBox";
+import ListBox, {faceRProps, infoProps, personProps} from "@/app/components/ListBox";
 import {io} from "socket.io-client";
 import jsonparser from "@/app/lib/jsonparser";
 import AudioPlayer from "@/app/components/AudioPlayer";
-import ImageBoxBase64 from "@/app/components/ImageBox";
+//import ImageBoxBase64 from "@/app/components/ImageBox";
 
 const navigation = [
     { name: 'Dashboard', href: '#', current: true },
@@ -22,21 +22,57 @@ function classNames(...classes: string[]) {
 }
 
 export default function Page() {
-    const [info, setInfo] = useState<infoProps>({data: "-", totInPerson: 0, totOutPerson: 0, rawImage: ""});
+    const [info, setInfo] = useState<infoProps>({
+        data: "-",
+        totInPerson: 0,
+        totOutPerson: 0,
+        rawImagePeople: "",
+        analyticsIdPeople: "",
+        idReport: ""
+    });
+    const [infoFR, setInfoFR] = useState<faceRProps>({
+        analyticsIdFR: "",
+        confidenceDetection: "",
+        rawImageFR: "",
+        status: "",
+        idReport: ""
+    });
+    const [person, setPerson] = useState<personProps>({
+        inPerson: 0,
+        outPerson: 0,
+    });
 
     const WebSocket = useMemo(() => io("ws://localhost:8900"), []);
     WebSocket.on("connect", () => {
         console.log("Connected!")
     })
 
-    WebSocket.on("message", (message: any) => {
+    WebSocket.on("message", (message) => {
         const result = jsonparser.getInfoCounting(message);
-        setInfo({
-            data: (result?.data || ""),
-            totInPerson: info?.totInPerson + result?.totInPerson,
-            totOutPerson: info?.totOutPerson + result?.totOutPerson,
-            rawImage: result?.rawImage ?? ""
-        });
+        if (result.analyticsId == "NFV4-MPA") {
+            setPerson({
+                inPerson: person.inPerson + result?.totInPerson,
+                outPerson: person.outPerson + result?.totOutPerson,
+            });
+            setInfo({
+                data: ("data" in result && result?.data || ""),
+                totInPerson:  result?.totInPerson,
+                totOutPerson: result?.totOutPerson,
+                rawImagePeople: result?.rawImagePeople ?? "",
+                analyticsIdPeople: result.analyticsIdPeople,
+                idReport: "NFV4-MPA"
+            });
+        } else if (result.analyticsId == "NFV4-FR") {
+            setInfoFR({
+                analyticsIdFR: result.analyticsIdFR,
+                rawImageFR: result?.rawImageFR ?? "",
+                confidenceDetection: result.confidenceDetection,
+                status: result.status,
+                idReport: "NFV4-FR"
+            })
+        }
+
+
     })
 
     WebSocket.on("disconnect", () => {
@@ -163,10 +199,22 @@ export default function Page() {
 
 
         </Disclosure>
-            <ListBox data={info.data} totInPerson={info.totInPerson} totOutPerson={info.totOutPerson} rawImage={info.rawImage} />
+            <ListBox data={info.data}
+                     totInPerson={person.inPerson}
+                     totOutPerson={person.outPerson}
+                     rawImagePeople={info.rawImagePeople}
+                     analyticsIdPeople={info.analyticsIdPeople}
+                     analyticsIdFR={infoFR.analyticsIdFR}
+                     status={infoFR.status}
+                     confidenceDetection={infoFR.confidenceDetection}
+                     rawImageFR={infoFR.rawImageFR}
+                     analyticsId={info.idReport}
+            />
             {/*<ImageBoxBase64 raw={info.rawImage} />*/}
             <div className="pb-"></div>
-            <AudioPlayer inPerson={info.totInPerson} outPerson={info.totOutPerson} />
+            <AudioPlayer inPerson={info.totInPerson} outPerson={info.totOutPerson}
+                         isFR={infoFR.analyticsIdFR !== undefined} FRStatus={infoFR.status}
+                         idReport={infoFR.idReport || info.idReport || ""} />
         </div>
     )
 }
